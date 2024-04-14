@@ -6,9 +6,11 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 
+	"github.com/SantoshNiroula/git-cherry-pick/helper"
 	"github.com/spf13/cobra"
 )
 
@@ -33,16 +35,22 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().StringP("file-name", "f", "pr.txt", "Read PR number from given file with new line")
 }
 
 func startCherryPick(cmd *cobra.Command, args []string) {
-	if len(args) == 0 {
-		fmt.Println("Enter at least one PR number")
-		return
-	}
+	var uniquePr []string
 
-	uniquePr := removeDuplicate(args)
-	fmt.Println("Unique pr:", uniquePr)
+	if len(args) == 0 {
+		fileName, err := cmd.Flags().GetString("file-name")
+		if err != nil {
+			log.Fatal(err)
+		}
+		prList := helper.ReadPRNumberFromFile(fileName)
+		uniquePr = removeDuplicate(prList)
+	} else {
+		uniquePr = removeDuplicate(args)
+	}
 
 	formattedPr := formatPRNumberForGrep(uniquePr)
 	runCommand(formattedPr)
